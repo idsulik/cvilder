@@ -3,7 +3,7 @@ import { ResumeData } from "../types";
 
 const getAIClient = () => {
   const apiKey = localStorage.getItem('gemini_api_key') || process.env.API_KEY;
-  
+
   if (!apiKey) {
     throw new Error("API_KEY_MISSING");
   }
@@ -67,9 +67,9 @@ export const parseResumeFromText = async (text: string): Promise<any> => {
 };
 
 export const parseResumeFromPdf = async (base64Data: string, mimeType: string): Promise<any> => {
-    try {
-        const ai = getAIClient();
-        const prompt = `
+  try {
+    const ai = getAIClient();
+    const prompt = `
             You are a professional resume parser. Extract information from this resume document and return it as a JSON object.
             
             Follow this strict structure:
@@ -86,45 +86,45 @@ export const parseResumeFromPdf = async (base64Data: string, mimeType: string): 
             For skills, try to group them logically.
         `;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash-exp', // Using 2.0 Flash for better multimodal document understanding
-            contents: {
-                role: 'user',
-                parts: [
-                    { text: prompt },
-                    { inlineData: { mimeType, data: base64Data } }
-                ]
-            },
-            config: {
-                responseMimeType: "application/json"
-            }
-        });
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.0-flash-exp', // Using 2.0 Flash for better multimodal document understanding
+      contents: {
+        role: 'user',
+        parts: [
+          { text: prompt },
+          { inlineData: { mimeType, data: base64Data } }
+        ]
+      },
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
 
-        return JSON.parse(response.text || "{}");
-    } catch (error: any) {
-        console.error("AI PDF Parsing failed", error);
-        throw error;
-    }
+    return JSON.parse(response.text || "{}");
+  } catch (error: any) {
+    console.error("AI PDF Parsing failed", error);
+    throw error;
+  }
 };
 
 export interface JobMatchAnalysis {
-    score: number;
-    missingKeywords: string[];
-    suggestions: string[];
+  score: number;
+  missingKeywords: string[];
+  suggestions: string[];
 }
 
 export const analyzeJobMatch = async (resumeData: ResumeData, jobDescription: string): Promise<JobMatchAnalysis> => {
-    try {
-        const ai = getAIClient();
-        
-        // Prepare a simplified version of resume to reduce token count
-        const resumeContext = JSON.stringify({
-            summary: resumeData.basics.summary,
-            skills: resumeData.skills.map(s => s.keywords).flat(),
-            experience: resumeData.work.map(w => `${w.position} at ${w.name}: ${w.highlights.join(' ')}`).join('\n')
-        });
+  try {
+    const ai = getAIClient();
 
-        const prompt = `
+    // Prepare a simplified version of resume to reduce token count
+    const resumeContext = JSON.stringify({
+      summary: resumeData.basics.summary,
+      skills: resumeData.skills.map(s => s.keywords).flat(),
+      experience: resumeData.work.map(w => `${w.position} at ${w.name}: ${w.highlights.join(' ')}`).join('\n')
+    });
+
+    const prompt = `
             You are an expert ATS (Applicant Tracking System) scanner.
             Compare the following Resume Data against the provided Job Description.
 
@@ -146,18 +146,71 @@ export const analyzeJobMatch = async (resumeData: ResumeData, jobDescription: st
             }
         `;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json"
-            }
-        });
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
 
-        return JSON.parse(response.text || "{}");
-    } catch (error: any) {
-        console.error("Job Analysis failed", error);
-        if (error.message === 'API_KEY_MISSING') throw error;
-        return { score: 0, missingKeywords: [], suggestions: ["AI Analysis Failed"] };
-    }
+    return JSON.parse(response.text || "{}");
+  } catch (error: any) {
+    console.error("Job Analysis failed", error);
+    if (error.message === 'API_KEY_MISSING') throw error;
+    return { score: 0, missingKeywords: [], suggestions: ["AI Analysis Failed"] };
+  }
+};
+
+export const generatePersonas = async (currentResume: ResumeData): Promise<any[]> => {
+  try {
+    const ai = getAIClient();
+    const simplifiedResume = {
+      name: currentResume.basics.name,
+      summary: currentResume.basics.summary,
+      skills: currentResume.skills,
+      experience: currentResume.work.map(w => ({
+        role: w.position,
+        company: w.name,
+        desc: w.highlights.join(' ')
+      }))
+    };
+
+    const prompt = `
+            You are a Career Strategist.
+            Based on this resume data, create 3 distinct "Personas" for A/B testing job applications.
+
+            1. "The Specialist": Focus deeply on technical hard skills and specific tools. Highlighting expertise.
+            2. "The Leader": Focus on soft skills, team collaboration, project management, and impact.
+            3. "The Generalist": A balanced approach suitable for smaller companies or cross-functional roles.
+
+            For EACH persona, rewrite:
+            - "label": A simplified professional title (e.g. "Senior React Specialist" vs "Engineering Lead")
+            - "summary": A 2-3 sentence professional summary matching the persona.
+            - "skills": Reorder and prioritize skills relevant to the persona (approx 10 keywords).
+
+            Return ONLY a valid JSON array of 3 objects:
+            [
+                { "type": "specialist", "label": "...", "summary": "...", "skills": [{ "name": "Core Skills", "keywords": [...] }] },
+                { "type": "leader", "label": "...", "summary": "...", "skills": [...] },
+                { "type": "generalist", "label": "...", "summary": "...", "skills": [...] }
+            ]
+
+            Resume Data:
+            ${JSON.stringify(simplifiedResume)}
+        `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    return JSON.parse(response.text || "[]");
+  } catch (error: any) {
+    console.error("Persona Generation failed", error);
+    throw error;
+  }
 };

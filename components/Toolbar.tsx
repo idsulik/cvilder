@@ -7,6 +7,8 @@ import { parseResumeFromText, parseResumeFromPdf } from '../services/geminiServi
 
 import { useUI } from '../context/UIContext';
 import { useToast } from '../context/ToastContext';
+import { ABTestModal } from './ABTestModal';
+import { FlaskConical } from 'lucide-react';
 
 const ResumeSwitcher: React.FC = () => {
     const { resumes, activeResumeId, switchResume, createResume, duplicateResume, deleteResume, updateResumeName, isExample } = useResume();
@@ -240,6 +242,7 @@ export const Toolbar: React.FC = () => {
     const [showImportMenu, setShowImportMenu] = useState(false);
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
+    const [showABModal, setShowABModal] = useState(false);
 
     const { openApiKeyModal, prompt } = useUI();
     const { toast } = useToast();
@@ -363,6 +366,15 @@ export const Toolbar: React.FC = () => {
                 {/* Divider */}
                 <div className="h-6 w-px bg-gray-300 mx-1 hidden sm:block"></div>
 
+                <button
+                    onClick={() => setShowABModal(true)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-md hover:bg-purple-100 transition-colors"
+                    title="A/B Test your Resume"
+                >
+                    <FlaskConical size={16} />
+                    <span className="hidden lg:inline">A/B Labs</span>
+                </button>
+
                 {/* Import Dropdown */}
                 <div className="relative" ref={importRef}>
                     <button
@@ -466,6 +478,7 @@ export const Toolbar: React.FC = () => {
                 </button>
             </div>
 
+            <ABTestModal isOpen={showABModal} onClose={() => setShowABModal(false)} />
         </div>
     );
 };
