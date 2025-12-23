@@ -17,8 +17,8 @@ export const Preview: React.FC = () => {
   };
 
   return (
-    <div className="h-full bg-gray-500 p-8 overflow-y-auto flex justify-center">
-      <div className="bg-white shadow-2xl w-[210mm] min-h-[297mm] transition-all duration-300 origin-top transform scale-75 md:scale-90 lg:scale-100">
+    <div className="h-full bg-gray-500 p-8 overflow-y-auto flex justify-center print:bg-white print:p-0 print:h-auto print:block print:overflow-visible">
+      <div className="bg-white shadow-2xl w-[210mm] min-h-[297mm] transition-all duration-300 origin-top transform scale-75 md:scale-90 lg:scale-100 print:shadow-none print:transform-none print:scale-100 print:m-0 print:w-full">
         {renderTemplate()}
       </div>
     </div>

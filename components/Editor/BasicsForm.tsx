@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useResume } from '../../context/ResumeContext';
+import { useUI } from '../../context/UIContext';
 import { Input } from '../ui/Input';
 import { RichTextEditor } from '../ui/RichTextEditor';
 import { Sparkles, Plus, Trash2, Github, Linkedin, Twitter, Globe } from 'lucide-react';
@@ -8,6 +9,7 @@ import { ResumeProfile } from '../../types';
 
 export const BasicsForm: React.FC = () => {
   const { resumeData, updateSection } = useResume();
+  const { openApiKeyModal } = useUI();
   const { basics } = resumeData;
   const [isImproving, setIsImproving] = useState(false);
 
@@ -44,16 +46,16 @@ export const BasicsForm: React.FC = () => {
 
     if (!textContent) return;
     setIsImproving(true);
-    
+
     try {
-        const improved = await improveText(textContent, 'summary');
-        handleChange('summary', improved);
-    } catch(e: any) {
-        if (e.message === 'API_KEY_MISSING') {
-            alert("Please set your Gemini API Key in the settings (gear icon) to use AI features.");
-        }
+      const improved = await improveText(textContent, 'summary');
+      handleChange('summary', improved);
+    } catch (e: any) {
+      if (e.message === 'API_KEY_MISSING') {
+        openApiKeyModal();
+      }
     } finally {
-        setIsImproving(false);
+      setIsImproving(false);
     }
   };
 
@@ -61,7 +63,7 @@ export const BasicsForm: React.FC = () => {
     <div className="space-y-6">
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Personal Information</h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input label="Full Name" value={basics.name} onChange={(e) => handleChange('name', e.target.value)} />
           <Input label="Job Title" value={basics.label} onChange={(e) => handleChange('label', e.target.value)} />
@@ -83,40 +85,40 @@ export const BasicsForm: React.FC = () => {
             <Plus size={14} /> Add Profile
           </button>
         </div>
-        
+
         <div className="space-y-3">
           {basics.profiles.map((profile, index) => (
             <div key={index} className="flex gap-2 items-start bg-gray-50 p-3 rounded-md relative group border border-gray-200">
-               <button 
+              <button
                 onClick={() => removeProfile(index)}
                 className="absolute top-1 right-1 text-gray-400 hover:text-red-500 p-1"
                 title="Remove Profile"
               >
                 <Trash2 size={14} />
               </button>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full pr-6">
-                 <Input 
-                   label="Network" 
-                   placeholder="LinkedIn, GitHub" 
-                   value={profile.network} 
-                   onChange={(e) => updateProfile(index, 'network', e.target.value)}
-                   className="mb-0" 
-                 />
-                 <Input 
-                   label="Username" 
-                   placeholder="johndoe" 
-                   value={profile.username} 
-                   onChange={(e) => updateProfile(index, 'username', e.target.value)}
-                   className="mb-0" 
-                 />
-                 <Input 
-                   label="URL" 
-                   placeholder="https://..." 
-                   value={profile.url} 
-                   onChange={(e) => updateProfile(index, 'url', e.target.value)}
-                   className="mb-0" 
-                 />
+                <Input
+                  label="Network"
+                  placeholder="LinkedIn, GitHub"
+                  value={profile.network}
+                  onChange={(e) => updateProfile(index, 'network', e.target.value)}
+                  className="mb-0"
+                />
+                <Input
+                  label="Username"
+                  placeholder="johndoe"
+                  value={profile.username}
+                  onChange={(e) => updateProfile(index, 'username', e.target.value)}
+                  className="mb-0"
+                />
+                <Input
+                  label="URL"
+                  placeholder="https://..."
+                  value={profile.url}
+                  onChange={(e) => updateProfile(index, 'url', e.target.value)}
+                  className="mb-0"
+                />
               </div>
             </div>
           ))}
@@ -127,9 +129,9 @@ export const BasicsForm: React.FC = () => {
       </div>
 
       <div className="relative pt-2">
-        <RichTextEditor 
-          label="Professional Summary" 
-          value={basics.summary} 
+        <RichTextEditor
+          label="Professional Summary"
+          value={basics.summary}
           onChange={(val) => handleChange('summary', val)}
         />
         <button
